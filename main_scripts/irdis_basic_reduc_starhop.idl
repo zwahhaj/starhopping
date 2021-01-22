@@ -1,0 +1,24 @@
+;;Written by Zahed Wahhaj, 2019.
+
+spawn,'touch marktime.txt'
+sphere_sort_hopsets,data='data_with_raw_calibs',dest='reduc'
+irdis_makeflat,'flatlist.txt'
+irdis_badpix_fromsky,'skylist.txt'
+sph_cen_irdis,'centerlist.txt', darkfiletxt='skylist.txt'
+irdis_make_flux_cube,'fluxlist.txt',szn=301
+
+
+irdis_basicreduc,'scilist.txt' ;;,maskfile='maskfile.save'
+spawn,'cat basicredlist.txt | xargs dfits | fitsort OBS.NAME | grep star1 | cut -f 1 > basicredlist1.txt' ;; science OBJECT only files for star1
+spawn,'cat basicredlist.txt | xargs dfits | fitsort OBS.NAME | grep star2 | cut -f 1 > basicredlist2.txt' ;; science OBJECT only files for star2
+spawn,'dfits SPHER.*.fits | fitsort TEL.AMBI.FWHM.START TEL.AMBI.FWHM.END TEL.AMBI.TAU0 > weather_conds.txt'
+
+irdis_make_asdi_cube,'basicredlist1.txt', outfile='imcbasic1.save',szn=301
+irdis_make_asdi_cube,'basicredlist2.txt', outfile='imcbasic2.save', szn=301
+
+sph_remove_bad_images,'imcbasic1.save',inrad=8,outrad=40
+sph_remove_bad_images,'imcbasic1.save',inrad=40,outrad=200
+sph_remove_bad_images,'imcbasic2.save',inrad=8,outrad=40
+sph_remove_bad_images,'imcbasic2.save',inrad=40,outrad=200
+
+end

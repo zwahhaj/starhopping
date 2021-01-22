@@ -1,0 +1,40 @@
+;; Written by Zahed Wahhaj, 2019
+;; INPUTS:
+;; imcbasic1.save = IDL save file with the science cube
+;; imcbasic2.save = IDL save file with the RDI reference cube
+;; flux.save = IDL save file with the FLUX cube 
+
+;; Some reduction parameters===========================
+!EXCEPT=0
+refwid = 256
+refdr = 2
+numref = 16
+widann = 16
+binfac = 1
+dmagat100mas = 9.0
+
+;IF you want to bin data to make smaller cubes, less slices============================
+;rebin_saved_cube, 'imcbasic1.save', binfac=binfac, nlambda=2, out_imc=imc1
+;rebin_saved_cube, 'imcbasic2.save', binfac=binfac, nlambda=2, out_imc=imc2
+imc1 = 'imcbasic1.save'
+imc2 = 'imcbasic2.save'
+
+
+;;IF you want to insert fake companions to estimate contrast curve
+;;insert_asdi_fakes, imc_save=imc1, flux_save='flux.save',dmagf=[dmagat100mas,dmagat100mas+2,dmagat100mas+3],rhof=[0.1,0.3,0.6],chan_flux_ratio=10.0, out_imc=imc1, dr=0.1, r0=0.1
+
+
+;;Different filter options=================================
+;sph_filter,imc_save=imc1, out_imc=imc1, flux_save='flux.save',maskrad=5,/azfilt
+;sph_filter,imc_save=imc2, out_imc=imc2, maskrad=5,/azfilt
+sph_filter,imc_save=imc1, out_imc=imc1, flux_save='flux.save',maskrad=5,/unsharp
+sph_filter,imc_save=imc2, out_imc=imc2, maskrad=5,/unsharp
+
+
+sph_smart_rdi_loci,rin=6,imc_save=imc1,refrdi=imc2,out_imc=imc, widann=widann, refdr=refdr, refwid=refwid, numref=numref
+derotate,imc_save=imc,stack=stack, fits='rdi_fakes_stack.fits',/weight,ilam=2.1,flam=2.15
+
+;;Estimate contrast from fake companions===========================
+;;sph_confake,'rdi_fakes_stack.fits',/simple, tag='_rdi_chanrat10', maskrad=7
+
+end
