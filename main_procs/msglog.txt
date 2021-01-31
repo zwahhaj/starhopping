@@ -1,0 +1,2 @@
+Sat Jan 23 13:48:45 2021, SPHERE_SORT_HOPSETS, line 102: WARNING: not all day304-cid2622640-IRDIS science files have the same DIT!
+/Users/zwahhaj/starhopcode/main_procs/sphere_sort_hopsets.pro
