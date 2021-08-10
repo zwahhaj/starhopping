@@ -1,9 +1,5 @@
 ;;Written by Zahed Wahhaj, 2019
 
-pro comm_restore, savefile
-  common scope_comm_restore, imc, pas, lambdas, dits, lambdas0, comment, normsci
-  restore, file=savefile
-end
 
 pro sph_remove_bad_images, insavefile,inrad=inrad, outrad=outrad
   common scope_comm_restore, imc, pas, lambdas, dits, lambdas0, comment, normsci
@@ -14,7 +10,7 @@ pro sph_remove_bad_images, insavefile,inrad=inrad, outrad=outrad
   if n_elements(inrad) eq 0 then inrad = sz*0.2
   if n_elements(outrad) eq 0 then outrad= sz/2.0*0.9
 
-  comm_restore,insavefile
+  restore,file=insavefile
 
   wg = get_good_images(imc,inrad=inrad,outrad=outrad, wb=wb,rms=rms)
   
@@ -33,6 +29,11 @@ pro sph_remove_bad_images, insavefile,inrad=inrad, outrad=outrad
      if n_elements(pas) ne 0 then pas = pas[wg]
      if n_elements(lambdas) ne 0 then lambdas = lambdas[wg]
      if n_elements(lambdas0) ne 0 then lambdas0 = lambdas0[wg]
+     if n_elements(stokes) ne 0 then stokes = stokes[wg]
+     if n_elements(polfilts) ne 0 then polfilts = polfilts[wg]
+     if n_elements(detside) ne 0 then detside = detside[wg]
+     if n_elements(tstamps) ne 0 then tstamps = tstamps[wg]
+     
      save,file=insavefile,/variables
   endif
 

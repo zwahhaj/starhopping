@@ -1,7 +1,13 @@
 ;;Written by Zahed Wahhaj, 2016
+;;2021, Jul 21, ZWa: Added tag, out1, out2
+;;OUTPUT:
+;;  out1 - filename of list star1 files
+;;  out2 - filename of list star2 files
 
-pro irdis_basicreduc,scilist, maskfile=maskfile
+pro irdis_basicreduc,scilist, maskfile=maskfile, tag=tag, out1=out1, out2=out2
 
+  if n_elements(tag) eq 0 then tag=''
+  
   darkb = readfits('dark_irdis.fits',dbhead)
   flat = readfits('flat_irdis.fits',junk)
   badpix = 1-readfits('badpix_irdis.fits',junk)
@@ -62,5 +68,31 @@ pro irdis_basicreduc,scilist, maskfile=maskfile
   endfor
   
   forprint,textout='basicredlist.txt',fnames,/nocomm
+
+  ;;divide the list into two, one for science, one for ref
+  
+  spawn,'cat basicredlist.txt | xargs dfits | fitsort RA DEC | cut -f 1', fnames
+  spawn,'cat basicredlist.txt | xargs dfits | fitsort RA DEC | cut -f 2', ras
+  spawn,'cat basicredlist.txt | xargs dfits | fitsort RA DEC | cut -f 3', decs
+  
+  fnames = fnames[1:*]
+  ras = ras[1:*]
+  decs = decs[1:*]
+  
+  dras = abs(float(ras)-float(ras[0])) 
+  ddecs = abs(float(decs)-float(decs[0])) 
+;;dras = string(abs(float(ras)-float(ras[0])),f="(F7.3)") 
+;;ddecs = string(abs(float(decs)-float(decs[0])),f="(F7.3)") 
+  
+  ds = sqrt(dras^2 + ddecs^2)
+  
+  w1 = where(ds lt 0.001)
+  w2 = where(ds ge 0.001)
+
+  out1 = 'basicredlist1'+tag+'.txt'
+  out2 = 'basicredlist2'+tag+'.txt'
+  
+  forprint, textout=out1, fnames[w1],/nocomment
+  forprint, textout=out2, fnames[w2],/nocomment
 
 end

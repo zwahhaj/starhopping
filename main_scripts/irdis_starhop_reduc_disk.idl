@@ -1,0 +1,61 @@
+;; Written by Zahed Wahhaj, 2019
+;; INPUTS:
+;; imc1 = IDL save file with the science cube
+;; imc2 = IDL save file with the RDI reference cube
+;; flux = IDL save file with the FLUX cube 
+;; OUTPUTS:
+;; rdi_out_fits = final reduced RDI fits file
+
+
+astrolib
+     
+;; Some reduction parameters===========================
+imc1 = 'imcbasic1.save'
+imc2 = 'imcbasic2.save'
+flux = 'flux.save'
+rdi_out_fits = 'rdi_stack_128.fits'
+fake_rdi_out_fits = 'fake_rdi_stack.fits'
+
+!EXCEPT=0
+refwid = 8
+refdr = 64
+numref = 16
+widann = 256
+binfac = 1
+dmagat100mas = 9.0
+
+
+;; MAIN ===============================
+
+;IF you want to bin data to make smaller cubes, less slices, uncomment below ============================
+;rebin_saved_cube, 'imcbasic1.save', binfac=binfac, nlambda=2, out_imc=imc1
+;rebin_saved_cube, 'imcbasic2.save', binfac=binfac, nlambda=2, out_imc=imc2
+
+
+
+;;Different filter options=================================
+;sph_filter,imc_save=imc1, out_imc=imc1, flux_save=flux,out_flux=out_flux,maskrad=5,/azfilt
+;sph_filter,imc_save=imc2, out_imc=imc2, maskrad=5,/azfilt
+;sph_filter,imc_save=imc1, out_imc=imc1, flux_save=flux,out_flux=out_flux,maskrad=5,/unsharp, peaknorm=peaks
+;sph_filter,imc_save=imc2, out_imc=imc2, maskrad=5,/unsharp
+
+
+;RDI reduction WITHOUT fake companions=================================
+sph_smart_rdi_loci, /disk,rin=6,imc_save=imc1,refrdi=imc2,out_imc=imc, widann=widann, refdr=refdr, refwidann=refwid, numref=numref
+derotate,imc_save=imc,stack=stack, fits=rdi_out_fits;;,/weight
+;;sph_contrast,rdi_out_fits,rho=rho,con5s=con5s, peak=peaks[0] ;; unconfirmed contrasts (without fake planet recovery).
+
+stop
+
+;RDI reduction WITH fake companions=================================
+rhof = [0.1,0.3,0.6]
+dmagf = interpol(con5s,rho,rhof) ;; will insert fakes at rhof with dmagf
+dmagf[0] += 0.5                    ;; making fake at 0.5" fainter by 1 mag
+
+insert_asdi_fakes, imc_save=imc1, flux_save=flux,dmagf=dmagf,rhof=rhof,chan_flux_ratio=10.0, out_imc=imc1, dr=0.1, r0=0.1
+sph_smart_rdi_loci,rin=6,imc_save=imc1,refrdi=imc2,out_imc=imc, widann=widann, refdr=refdr, refwid=refwid, numref=numref
+derotate,imc_save=imc,stack=stack, fits=fake_rdi_out_fits,/weight
+sph_confake,fake_rdi_out_fits,/simple, tag='_rdi_chanrat10', maskrad=7 ;;Estimate contrast from fake companions
+
+
+end

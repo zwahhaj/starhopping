@@ -2,7 +2,7 @@
 
 pro sph_filter, imc_save = imc_save, flux_save=flux_save,rayfilt=rayfilt,azfilt=azfilt, peaks=peaks, $
                 outrad=outrad, out_imc_save=out_imc_save, out_flux_save=out_flux_save, peaknorm=peaknorm, $
-                unsharp=unsharp, flatten=flatten, maskrad=maskrad
+                unsharp=unsharp, flatten=flatten, maskrad=maskrad, fwhm=fwhm
 
 if n_elements(imc_save) eq 0 then imc_save='imcbasic.save'
 restore,file=imc_save
@@ -10,6 +10,7 @@ restore,file=imc_save
 num = (size(imc))[3]
 sz = (size(imc))[1]
 
+if n_elements(fwhm) eq 0 then fwhm=4
 if n_elements(outrad) eq 0 then outrad=sz/2.0*1.44
 if n_elements(maskrad) ne 0 then w0 = getrgn(imc[*,*,0],0,maskrad)
 
@@ -20,10 +21,10 @@ for i=0, num-1 do begin
    if n_elements(maskrad) ne 0 then img[w0] = 0
    if n_elements(azfilt) ne 0 then submedprof,img
    if n_elements(rayfilt) ne 0 then subray,img,/fixcen 
-   if n_elements(unsharp) ne 0 then getfreq, img, 4, img, /unsharp 
+   if n_elements(unsharp) ne 0 then getfreq, img, fwhm, img, /unsharp 
    if n_elements(unsharp) eq 0 and n_elements(azfilt) eq 0 and n_elements(rayfilt) eq 0 $
       and n_elements(flatten) eq 0 then $
-      getfreq, img, 4, img
+      getfreq, img, fwhm, img
    if n_elements(flatten) ne 0 then begin
       img = img/flatten
       ;temp = img
@@ -49,12 +50,12 @@ if file_test(flux_save) ne 0 then begin
    fluximg2 = fluximc[*,*,1]
 
    if n_elements(unsharp) ne 0 then begin
-      getfreq,fluximc[*,*,0],4,fluximg1,/unsharp
-      getfreq,fluximc[*,*,1],4,fluximg2,/unsharp
+      getfreq,fluximc[*,*,0],fwhm,fluximg1,/unsharp
+      getfreq,fluximc[*,*,1],fwhm,fluximg2,/unsharp
    endif
    if n_elements(unsharp) eq 0  and n_elements(azfilt) eq 0 and n_elements(rayfilt) eq 0 then begin
-      getfreq,fluximc[*,*,0],4,fluximg1
-      getfreq,fluximc[*,*,1],4,fluximg2
+      getfreq,fluximc[*,*,0],fwhm,fluximg1
+      getfreq,fluximc[*,*,1],fwhm,fluximg2
    endif
    
    fluximc[0,0,0] = fluximg1

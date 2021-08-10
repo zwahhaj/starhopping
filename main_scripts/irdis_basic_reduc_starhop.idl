@@ -1,5 +1,6 @@
 ;;Written by Zahed Wahhaj, 2019.
 
+astrolib
 spawn,'touch marktime.txt'
 irdis_makeflat,'flatlist.txt'
 irdis_badpix_fromsky,'skylist.txt'
@@ -8,8 +9,7 @@ irdis_make_flux_cube,'fluxlist.txt',szn=301
 
 
 irdis_basicreduc,'scilist.txt' ;;,maskfile='maskfile.save'
-spawn,'cat basicredlist.txt | xargs dfits | fitsort OBS.NAME | grep star1 | cut -f 1 > basicredlist1.txt' ;; science OBJECT only files for star1
-spawn,'cat basicredlist.txt | xargs dfits | fitsort OBS.NAME | grep star2 | cut -f 1 > basicredlist2.txt' ;; science OBJECT only files for star2
+
 spawn,'dfits SPHER.*.fits | fitsort TEL.AMBI.FWHM.START TEL.AMBI.FWHM.END TEL.AMBI.TAU0 > weather_conds.txt'
 
 irdis_make_asdi_cube,'basicredlist1.txt', outfile='imcbasic1.save',szn=301

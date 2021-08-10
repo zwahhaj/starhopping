@@ -1,4 +1,5 @@
 ;;Written by Zahed Wahhaj, 2019
+;;Feb 3, 2021: zwahhaj. Fixed error when container has no science files.
 
 pro sphere_sort_hopsets, data_dir=data_dir, dest_dir=dest_dir
   
@@ -29,7 +30,8 @@ pro sphere_sort_hopsets, data_dir=data_dir, dest_dir=dest_dir
   contid= strarr(num)  ;; containner ID
   night= strarr(num)   ;; night of year
   ifslamp= strarr(num)  
-  
+
+  ;; Looping over all SPHERE FITS files found.
   for i=0, num-1 do begin
      cols = strsplit(res[i],string(9b),/ex)
      if i eq 0 then night0 = strmid(trim(cols[12]),12,3,/rev) 
@@ -43,12 +45,12 @@ pro sphere_sort_hopsets, data_dir=data_dir, dest_dir=dest_dir
      filts[i] = trim(cols[7])
      contid[i] = trim(cols[11])
      ifslamp[i] = trim(cols[13])
-     daydiff = long(esotimediff(ftimes[i],ftimes[0])) / 86400L ;; one day in secs
+     daydiff = long(esotimediff(ftimes[i],ftimes[0])) / 86400L ;; time diff in secs between file_0 and file_i
      night[i] = trim(night0+daydiff)
      print, cols[12], night0, daydiff
   endfor
-  
-  
+
+  ;;Finding all the science files, OBJ, FLUX, CENTER, SKY 
   cond_sci = (strmatch(objects,'*Calibration*') eq 0) AND (strlen(arms) ne 0)
   wsci = where(cond_sci)
 ;objs = objects+'_'+arms
@@ -88,6 +90,7 @@ pro sphere_sort_hopsets, data_dir=data_dir, dest_dir=dest_dir
      spawn,'rm flatinfo.txt'
      spawn,'rm flatoptions.txt'
      spawn,'rm skylist.txt'
+     spawn,'rm skylist_other.txt'
      spawn,'rm skyinfo.txt'
      spawn,'rm skyoptions.txt'
      spawn,'rm darklist.txt'
@@ -96,33 +99,49 @@ pro sphere_sort_hopsets, data_dir=data_dir, dest_dir=dest_dir
      spawn,'rm ifscal*.txt'
      
      ;;writing out science files ======================================================================================
-     wm = where(strmatch( objs, obju[i]) ne 0 AND strmatch(dprtype[wsci],'OBJECT') ne 0 AND strmatch(dprtype[wsci],'OBJECT,') eq 0) 
+     wm = where(strmatch( objs, obju[i]) ne 0 AND strmatch(dprtype[wsci],'OBJECT') ne 0 $
+                AND strmatch(dprtype[wsci],'OBJECT,') eq 0) 
+     if wm[0] eq -1 then begin
+        msglog, obju[i]+' has no science files. Skipping to next container.',file=msgfile
+        continue
+     endif
      ditmed = median(dits[wsci[wm]])
      if n_elements(wm) gt 1 then if stddev(dits[wsci[wm]]) ne 0 then begin
         msglog,'WARNING: not all '+obju[i]+' science files have the same DIT!',file=msgfile
-                                ;wm = where( strmatch(objs, obju[i]) ne 0 and dits eq ditmed) ;;only choose the most common science DIT.
-        wm = where(strmatch( objs, obju[i]) ne 0 AND strmatch(dprtype[wsci],'OBJECT') ne 0 AND strmatch(dprtype[wsci],'OBJECT,') eq 0 and dits[wsci] eq ditmed) 
+        ;;wm = where( strmatch(objs, obju[i]) ne 0 and dits eq ditmed) ;;only choose the most common science DIT.
+        wm = where(strmatch( objs, obju[i]) ne 0 AND strmatch(dprtype[wsci],'OBJECT') ne 0 $
+                   AND strmatch(dprtype[wsci],'OBJECT,') eq 0 and dits[wsci] eq ditmed) 
+        ;; wmo for the other DITs.
+        wmo = where(strmatch( objs, obju[i]) ne 0 AND strmatch(dprtype[wsci],'OBJECT') ne 0 $
+                   AND strmatch(dprtype[wsci],'OBJECT,') eq 0 and dits[wsci] ne ditmed) 
      endif
      linfo = 'sciinfo.txt'
      lnames = 'scilist.txt'
+     lnameso = 'scilist_other.txt'
      if file_test(linfo) eq 0 then forprint2, textout=linfo,comment,/silent
      forprint2, textout=linfo, res[wsci[wm]], /update,/silent
      forprint2, textout=lnames, fnames[wsci[wm]], /update,/silent
+     if wmo[0] ne -1 then forprint2, textout=lnameso, fnames[wsci[wmo]], /update,/silent
      for k=0, n_elements(wm)-1 do spawn,'ln -s '+trim(data_dir)+'/'+trim(fnames[wsci[wm[k]]])+' .'
+     if wmo[0] ne -1 then for k=0, n_elements(wmo)-1 do spawn,'ln -s '+trim(data_dir)+'/'+trim(fnames[wsci[wmo[k]]])+' .'
      
-     ;;SETTING KEY properties of SCIENCE files to match ======================================================================================
+     ;;SETTING KEY properties of SCIENCE files to match ===============================================================
      ;;print, dits[wsci[wm]]
-                                ;ws0 = wsci[wm[0]] ;; the 1st science file index for this data set
-                                ;ws = wsci[wm] ;; the science file indices for this data set
-     ws = where(strmatch(datasets,obju[i]) ne 0 and dits eq ditmed) ;; the science file indices for this data set ;; REMOVED: and dits eq ditmed
-     ws0 = ws[0] ;; the 1st science file index for this data set. CANNOT use on "datasets" or "obju" arrays. ONLY on "dits", "arms", etc. 
+     ;;ws0 = wsci[wm[0]] ;; the 1st science file index for this data set
+     ;;ws = wsci[wm] ;; the science file indices for this data set
+
+     ;;The science file indices for this data set ;; REMOVED: and dits eq ditmed
+     ws = where(strmatch(datasets,obju[i]) ne 0 and dits eq ditmed)
+     ;; the 1st science file index for this data set.
+     ;; CANNOT use on "datasets" or "obju" arrays. ONLY on "dits", "arms", etc. 
+     ws0 = ws[0] 
      
      timediff = fltarr(num)
      for j=0,num-1 do begin ;; TIMEDIFFs for all files 
         timediff[j] = abs(esotimediff(ftimes[ws0],ftimes[j]))
      endfor
      
-     ;;FLATS: Get the possible flats, checking only INS/ARM and filter=====================================================================
+     ;;FLATS: Get the possible flats, checking only INS/ARM and filter=================================================
      lfnames = 'flatlist.txt'
      lfinfo = 'flatinfo.txt'
      lfopts = 'flatoptions.txt'
@@ -175,7 +194,7 @@ pro sphere_sort_hopsets, data_dir=data_dir, dest_dir=dest_dir
             spawn,'ln -s '+trim(data_dir)+'/'+trim(fnames[wb2])+' .'
          end
       endcase
-   endif
+     endif
 
    
    ;; Make sky list =====================================================================================
@@ -338,7 +357,7 @@ pro sphere_sort_hopsets, data_dir=data_dir, dest_dir=dest_dir
    lfinfo = 'ifscal2_info.txt'
    lfopts = 'ifscal2_options.txt'
    if strmatch(arms[ws0],'IFS') ne 0 then begin
-      ;var = repstr(prisms,'PRI_','')
+      ;;var = repstr(prisms,'PRI_','')
       str_dprtype =['SPECPOS,LAMP','WAVE,LAMP','FLAT,LAMP']
       for ii=0,n_elements(str_dprtype)-1 do begin
          condg = strmatch(dprtype,'*'+str_dprtype[ii]+'*') ne 0 and strmatch(arms,arms[ws0]) ne 0 and strmatch(prisms,prisms[ws0]) ne 0 and strmatch(ifslamp,'*OBS*') ne 0
@@ -363,9 +382,10 @@ pro sphere_sort_hopsets, data_dir=data_dir, dest_dir=dest_dir
          endcase
       endfor
    endif
-
-
+   
 endfor
-
-cd,org_dir
+  
+  cd,org_dir
+  print,"Number of science files found per concatenation:"
+  spawn,"wc -l "+dest_dir+"/*/scilist.txt"
 end

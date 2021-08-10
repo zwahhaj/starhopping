@@ -1,0 +1,68 @@
+;;
+
+;;goto, main_reduc_l
+ 
+;; separate science and ref star files
+spawn,'mkdir products/star1'
+spawn,"dfits products/SPHER.*.fits | fitsort OBS.NAME | grep HD950 | cut -f 1 | awk '{$1=$1}1' > temp.txt"
+unixlist,'temp.txt',com2='ln file products/star1/.'
+
+spawn,'mkdir products/star2'
+spawn,"dfits products/SPHER.*.fits | fitsort OBS.NAME | grep Ref | cut -f 1 | awk '{$1=$1}1' > temp.txt"
+unixlist,'temp.txt',com2='ln file products/star2/.'
+
+find_flux_file_l:
+spawn,'cat products/file_list.dat | grep flux_file',res
+file_root = trim(repstr(res[0],'flux_file :',''))
+file_root = strsplit(file_root,',',/ex)
+flux_file = "products/star1/"+file_root[0]+"_preproc_col_mean_bkg_bp_ct_00000.fits"
+;;spawn,'find -f . | grep -i '+file_root,res
+sph_flux_ifs,flux_file, padpix= 50
+
+find_cen_file_l:
+spawn,'cat products/file_list.dat | grep cent_file',res
+file_root = trim(repstr(res[0],'cent_file :',''))
+file_root = strsplit(file_root,',',/ex)
+spawn,'grep coro_file products/file_list.dat | cut -f 1 -d ","',res2
+file_root2 = trim(repstr(res2[0],'coro_file :',''))
+file_root2 = strsplit(file_root2,',',/ex)
+cen_file = "products/star1/"+file_root[0]+"_preproc_col_mean_bkg_bp_ct_00000.fits"
+sci1_file = "products/star1/"+file_root2[0]+"_preproc_bkg_bp_ct_00000.fits"
+;;spawn,'find -f . | grep -i '+file_root,res
+sph_cen_ifs,cen_file,sci1_file
+
+prepare_star1_l:
+spawn,'ls -1 products/star1/SPHER.*_preproc_bkg_bp_ct_*.fits > basicredlist1.txt'
+sph_recen_pas_ifs,'basicredlist1.txt',outsave='imcbasic1.save', padpix= 50
+
+prepare_star2_l:
+spawn,'ls -1 products/star2/SPHER.*_preproc_bkg_bp_ct_*.fits > basicredlist2.txt'
+sph_recen_pas_ifs,'basicredlist2.txt',outsave='imcbasic2.save', extrafits='extraflat.fits', padpix= 50
+
+;; real reduc00
+align_ifs_rdi, 'imcbasic1.save','imcbasic2.save',/filtimg
+sph_rdi_ifs, imc_save = 'imcbasic1_aln.save', refrdi_save='imcbasic2_aln.save', rin=10, widann=65
+.run sdi.idl
+stack_ifs, imc_save='final_sdi.save', stack=stack
+
+;; real reduc01
+sph_rdi_ifs, imc_save = 'imcbasic1.save', refrdi_save='imcbasic2.save', rin=10, widann=65
+
+main_reduc_l:
+sph_fakes_ifs, imc_save = 'imcbasic1.save', sig=5.0
+
+align_ifs_rdi, 'imcbasic1_fakes.save','imcbasic2.save',/filtimg
+
+sph_rdi_ifs, imc_save = 'imcbasic1_fakes_aln.save', refrdi_save='imcbasic2_aln.save', rin=10, widann=65
+
+stack_ifs, imc_save='imcbasic1_fakes_alnrdi.save', stack=stack
+
+;sph_smart_rdi_ifs, imc_save = 'imcfakes.save', refrdi_save='imcbasic2_aln.save', rin=6, widann=45, numref=20
+
+ 
+test_l:
+spawn,'ls -1 products/star1/SPHER.*_preproc_bkg_bp_ct_*.fits > basicredlist1.txt'
+sph_recen_pas_ifs,'basicredlist1.txt',outsave='imcbasictest.save', extraflat='extraflat.fits', padpix= 50
+
+
+end

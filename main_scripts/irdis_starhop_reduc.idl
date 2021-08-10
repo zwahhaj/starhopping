@@ -7,10 +7,11 @@
 ;; rdi_out_fits = final reduced RDI fits file
 
 
-
+astrolib
+     
 ;; Some reduction parameters===========================
-imc1 = 'imcbasic1_bin8.save'
-imc2 = 'imcbasic2_bin8.save'
+imc1 = 'imcbasic1.save'
+imc2 = 'imcbasic2.save'
 flux = 'flux.save'
 rdi_out_fits = 'rdi_stack.fits'
 fake_rdi_out_fits = 'fake_rdi_stack.fits'
@@ -41,19 +42,19 @@ sph_filter,imc_save=imc2, out_imc=imc2, maskrad=5,/unsharp
 
 ;RDI reduction WITHOUT fake companions=================================
 sph_smart_rdi_loci,rin=6,imc_save=imc1,refrdi=imc2,out_imc=imc, widann=widann, refdr=refdr, refwid=refwid, numref=numref
-derotate,imc_save=imc,stack=stack, fits=rdi_out_fits,/weight,ilam=2.1,flam=2.15
+derotate,imc_save=imc,stack=stack, fits=rdi_out_fits,/weight
 sph_contrast,rdi_out_fits,rho=rho,con5s=con5s, peak=peaks[0] ;; unconfirmed contrasts (without fake planet recovery).
 
 
 ;RDI reduction WITH fake companions=================================
 rhof = [0.1,0.3,0.6]
 dmagf = interpol(con5s,rho,rhof) ;; will insert fakes at rhof with dmagf
-dmagf[0] += 0.5                    ;; making fake at 0.5" fainter by 1 mag
+;;dmagf[0] += 0.5                    ;; making fake at 0.1" fainter by 0.5 mag
 
-insert_asdi_fakes, imc_save=imc1, flux_save=flux,dmagf=dmagf,rhof=rhof,chan_flux_ratio=10.0, out_imc=imc1, dr=0.1, r0=0.1
+insert_asdi_fakes, imc_save=imc1, flux_save=flux,dmagf=dmagf,rhof=rhof,chan_flux_ratio=1.0, out_imc=imc1, dr=0.1, r0=0.1
 sph_smart_rdi_loci,rin=6,imc_save=imc1,refrdi=imc2,out_imc=imc, widann=widann, refdr=refdr, refwid=refwid, numref=numref
-derotate,imc_save=imc,stack=stack, fits=fake_rdi_out_fits,/weight,ilam=2.1,flam=2.15
-sph_confake,fake_rdi_out_fits,/simple, tag='_rdi_chanrat10', maskrad=7 ;;Estimate contrast from fake companions
+derotate,imc_save=imc,stack=stack, fits=fake_rdi_out_fits,/weight
+sph_confake,fake_rdi_out_fits,/simple, tag='_rdi_chanrat1', maskrad=7 ;;Estimate contrast from fake companions
 
 
 end

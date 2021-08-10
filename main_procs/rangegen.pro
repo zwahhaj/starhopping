@@ -1,5 +1,7 @@
 ;;Written by Zahed Wahhaj
 ;; july 22, 2012. Corrected the step keyword.
+;; July 24, 2021. ZWa. Return avg when pts = 1
+
 function rangegen, x1, x2, pts, log=log, step=step, odd=odd, even=even
 
   if n_elements(pts) eq 0 then begin
@@ -7,6 +9,8 @@ function rangegen, x1, x2, pts, log=log, step=step, odd=odd, even=even
      else pts = ceil((x2-x1)/step+1.0d)
   endif
 
+  if pts eq 1 then return, (x1+x2)/2.0
+  
   if n_elements(log) then begin 
      range = alog(x2)-alog(x1)
      temp = dindgen(pts)*range/(pts-1d)+alog(x1) 

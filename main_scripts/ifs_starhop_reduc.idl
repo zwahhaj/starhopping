@@ -1,0 +1,56 @@
+;;Written by Zahed Wahhaj, 2019-
+;;current, ZWa, August 6, 2021
+
+;;parameters ==========
+binfac=8
+TN = -1.75
+pa_off = -(135.99+TN-100.48)
+
+;;setup calcs ============
+peakcalc_ifs, hpeak=hpeak, jpeak=jpeak, ypeak=ypeak ;; measure stellar peak at h-band
+
+;;======== normal reduction  to detect planets==========
+tag = '_nofakes'
+sph_rdi_ifs,tag=tag, binfac=binfac, out_save=savefile ;; do the actual reduction.    
+
+stack_simple_ifs,tag=tag, pa_off=pa_off, imc_save = savefile, reject_inx= indgen(5), fstackfits=fstackfits ; stack / reject 5 frames
+
+;; Use sns_cut=3 to find marginal detections 
+detect_gen, fstackfits[0], peakstar=ypeak, fileb='y_',/contrast ;; detections in y-band
+detect_gen, fstackfits[1], peakstar=jpeak, fileb='j_',/contrast ;; detections in j-band
+detect_gen, fstackfits[2], peakstar=hpeak, fileb='h_',/contrast ;; detections in h-band
+stop
+
+;;======== reduction with fake planets for contrast estimates ==========
+
+tag = '_fakes'
+
+;;esimate contrast limit from hband residuals and star peak - unconfirmed without fakes
+sph_contrast,fstackfits[0],rho=rho,con5s=con5s, peak=hpeak 
+
+;; input contrasts
+rhof = [0.1,0.3,0.6]
+;; will insert fakes at rhof with dmagf. Making fakes brighter by 0.5 mag
+dmagf = interpol(con5s,rho,rhof)-0.5 
+
+
+;;insert the fakes
+sph_fakes_ifs, imc_save='imcbasic1.save', flux_save='flux_ifs.save',dmagf=dmagf,rhof=rhof
+;; do the actual reduction
+sph_rdi_ifs,/fakes,tag=tag, binfac=binfac, out_save=savefile 
+;; stack / reject 5 frames
+stack_simple_ifs,tag=tag, imc_save = savefile, reject_inx=indgen(5), stackfits=stackfits 
+
+
+;;make the contrast curves
+sph_confake,stackfits[0],fakes_save='fakes.save',/simple,tag='y'+tag, pscale=0.00746, $
+            fwhm=4d*1/1.6 ;; Y-band
+sph_confake,stackfits[1],fakes_save='fakes.save',/simple,tag='j'+tag, pscale=0.00746, $
+            fwhm=4d*1.2/1.6 ;; J-band
+sph_confake,stackfits[2],fakes_save='fakes.save',/simple,tag='h'+tag, pscale=0.00746, $
+            fwhm=4.0 ;; H-band
+
+
+end
+    
+

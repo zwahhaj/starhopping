@@ -21,16 +21,17 @@ function zscalediff, img1, img2, wm=wm, fac=fac, rms=rms, zoom=zoom, const=const
   endelse     
 
   ;;removing medians from both arrays
-  a -=median(a)
+  meda = median(a)
+  a -=meda
   medb = median(b)
   b -= medb
 
   
   fac = total(a*b)/total(b*b)
   
-  mimg = img2*fac+medb
+  mimg = (img2-medb)*fac+meda
   diff=img1-mimg
-  const=medb
+  const=[meda, medb]
   
   if n_elements(wm) eq 0 then begin
      mincnt =  stddev(diff)/10.0

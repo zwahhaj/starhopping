@@ -50,10 +50,13 @@ endif
       wb = getrgn(img,xc=x,yc=y,0,5)
       temp = img
       smap = snmap(temp, rgnblock=wb)
+
+      peak=0
       if n_elements(simple) ne 0 then begin
          ;;curpeak,smap,x,y,peak,/guess
          fqs[i] = roundness(img, x, y, limfw=5,xc=xc,yc=yc,edist=edist)
-         peak = sncalcpt2(img, xc, yc, fwhm, disp=disp)
+         if fqs[i] gt 0 and fqs[i] le 0.9 then $
+            peak = sncalcpt2(img, xc, yc, fwhm, disp=disp)
          epos[i]=edist
          ;;fqs[i] = 0.5
       endif else fqs[i] = roundness(smap, x, y, limfw=4,/force, peak=peak,fwhm=fwhm,edist=edist)
@@ -69,17 +72,14 @@ endif
    wg = where(fqs lt 0.85 and sns gt 3.5 and epos lt fwhm/2.0 or (sns gt 6 and fqs lt 0.6 and  epos lt fwhm/1.33) ) ;; only allow good shapes
    writefits,'snmap'+tag+'.fits',smap
    forprint, "Warning: at small IWA, SNMAP underpredicts SNR, b/c of easily recog. wave structure. Using orig. image instead.", textout='contrast_fakes'+tag+'.txt'
-   forprint2, rhosf[wg]*pscale, consf[wg], textout='contrast_fakes'+tag+'.txt',f='F7.2,F7.2',/update
-   ;forprint, rhosf[wg]*pscale, consf[wg],f='F7.2,F7.2'
-   rho=rhosf[wg] & dmag=consf[wg]
-   save,file='contrast_fakes'+tag+'.save',rho,dmag
-
-   forprint, "   rhosf, consf, sns,   fqs,  epos ", textout='contrast_fakes_all'+tag+'.txt'
-   forprint2, rhosf*pscale, consf, sns,fqs, epos, textout='contrast_fakes_all'+tag+'.txt',f='F7.2,F7.2,F7.2,F7.2,F7.2',/update
-   ;forprint, "   rhosf, consf, sns,   fqs,  epos "
-   ;forprint, rhosf*pscale, consf, sns,fqs, epos, f='F7.2,F7.2,F7.2,F7.2, F7.2'
-
-;;writefits,'out.fits',img
-;stop
-
+   
+   if wg[0] ne -1 then begin
+      forprint2, rhosf[wg]*pscale, consf[wg], textout='contrast_fakes'+tag+'.txt',f='F7.2,F7.2',/update
+      rho=rhosf[wg] & dmag=consf[wg]
+      save,file='contrast_fakes'+tag+'.save',rho,dmag
+      
+      forprint, "   rhosf, consf, sns,   fqs,  epos ", textout='contrast_fakes_all'+tag+'.txt'
+      forprint2, rhosf*pscale, consf, sns,fqs, epos, textout='contrast_fakes_all'+tag+'.txt',f='F7.2,F7.2,F7.2,F7.2,F7.2',/update
+   endif
+   
 end

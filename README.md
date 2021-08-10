@@ -8,7 +8,11 @@ The full set of files described below are still being prepared.
 ---------------------------------------
 Citation:
 When using these procedures for publications, you can cite Wahhaj et al. 2021 (A&A, in press):
+<<<<<<< HEAD
 (https://arxiv.org/abs/2101.08268)
+=======
+(https://ui.adsabs.harvard.edu/search/q=%20%20author%3A%22%5EWahhaj%22&sort=date%20desc%2C%20bibcode%20desc&p_=0)
+>>>>>>> a268fee72458a8b9e444e0ff2cf6001411b63bbc
 
 ---------------------------------------
 Directories:
@@ -23,6 +27,7 @@ AO image differencing.
 
 sample_data - 
 Some sample data files to test the scripts.
+<<<<<<< HEAD
 These are typically image cubes saved in IDL save files
 made by the basic reduction script (irdis_basic_reduc_starhop.idl).
 
@@ -32,6 +37,13 @@ The authors are indicated in the files themselves.
 Tne new code, being made public here for the first time, are mostly written
 by Michael C. Liu (IfA, U. of Hawaii)
 and we thank him for kindly providing them.
+=======
+These are typically image cubes saved in IDL save files.
+
+dependencies -
+IDL code written by others.
+The authors are indicated in the files themselves.
+>>>>>>> a268fee72458a8b9e444e0ff2cf6001411b63bbc
 
 ---------------------------------------
 How to reduce data:
@@ -55,7 +67,11 @@ day305-cid2623923-IRDIS
 which indicates: day_of_year - container_id - instrument_arm
 
 Each of these represent one science + reference data set
+<<<<<<< HEAD
 (data from one concatenation of science and reference star OBs).
+=======
+(one concatenation of science and reference star OBs).
+>>>>>>> a268fee72458a8b9e444e0ff2cf6001411b63bbc
 
 
 --------------------
@@ -76,4 +92,8 @@ irdis_starhop_reduc.idl
 ---------------------
 IFS reduction:
 
+<<<<<<< HEAD
 Scripts coming soon.
+=======
+Scripts coming soon.
+>>>>>>> a268fee72458a8b9e444e0ff2cf6001411b63bbc

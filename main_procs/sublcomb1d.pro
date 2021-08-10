@@ -19,7 +19,7 @@
   ;; Sep 06, 2019  Made more efficient by vectorization.
 ;; Sep 20, 2019  added "ncomp": number of images to use in linear
 ;; c                            cutoff by coeff magnitude
-function sublcomb1d, im1, imc, coeff=coeff, mode=mode,  verbose=verbose, ncomp=ncomp
+function sublcomb1d, im1, imc, coeff=coeff, mode=mode,  verbose=verbose, ncomp=ncomp, nomedsub=nomedsub
   
   ;medc = median(imc,dim=2)
   
@@ -28,9 +28,11 @@ function sublcomb1d, im1, imc, coeff=coeff, mode=mode,  verbose=verbose, ncomp=n
   ez = (size(e))[2]  ;; total ref frames
   
   a = im1
-  med0 = median(a)
-  a -= median(a)
-
+  if n_elements(nomedsub) eq 0 then begin
+     med0 = median(a)
+     a -= median(a)
+  endif else med0 = 0
+  
   ;; remove median from every row of data
   e -= transpose(cmreplicate(median(e,dim=1),dz))
   
@@ -87,12 +89,3 @@ coeff= cr
 return, sub
 end
 
-  ;CATCH, Error_status  
-  ;;This statement begins the error handler:  
-  ;IF Error_status NE 0 THEN BEGIN  
-  ;    FORPRINT2, systime()+': LOCI failed. Returning median PSF instead for simple ADI.', Error_status, textout='error.log',/update  
-  ;    FORPRINT2, 'Error index: ', Error_status, textout='error.log',/update  
-  ;    FORPRINT2, 'Error message: ', !ERROR_STATE.MSG, textout='error.log',/update  
-  ;    CATCH, /CANCEL
-  ;    return, medc
-  ;ENDIF  

@@ -1,8 +1,12 @@
-;; Written by Zahed Wahhaj, 2019.
+;; Written by ZWa, 2019
+;; estimate the signal to noise
+;; Not used alone. Shape criteria and S/N is used elsewhere to mark as detection.
 ;; local : If true the background region is centered around the source
+;; Aug 3, 2021, ZWa - Added the poisson noise from signal.
 
 function sncalcpt2, img, x, y, fwhm, local=local, disp=disp
 
+  
   ws = getrgn(img, 0, fwhm*0.5, xc=x, yc=y)
   
 
@@ -20,23 +24,18 @@ function sncalcpt2, img, x, y, fwhm, local=local, disp=disp
      wb = getrgn(img, rin, rout)
      wb = setdiff(wb, win)
      wb = setdiff(wb, wout)
-     ;temp = img
-     ;temp[wb] = 0
-     ;atv, temp
-     ;pause
   endelse
-  ;bck = median(img[wb])
-  ;npix = n_elements(ws)
-  ;sig = interpolate(img,x,y,c=-0.5)-bck
-  ;noise = stddev(img[wb])
-  ;print, 'sncalcpt:',x,y, sig/noise, sig, noise, total(img[ws]), npix*bck,stddev(img[wb]),sqrt(npix)
-  ;;stop
 
-  bck = median(img[wb])
+  bck = mean(img[wb])
   npix = n_elements(ws)
+  nbck = n_elements(wb)
   sig = total(img[ws])-npix*bck
-  noise = stddev(img[wb])*sqrt(npix)
-  ;print, 'sncalcpt:',x,y, sig/noise, sig, noise, total(img[ws]), npix*bck,stddev(img[wb]),sqrt(npix)
+  eb0 = stddev(img[wb])*sqrt(npix) ;; bgnd stddev in signal area
+  eb1 = stddev(img[wb])/sqrt(nbck) ;; uncertainty in background mean.
+  es0 = sqrt(sig/2.0) ;; poisson noise for gain = 2.0
+  noise = sqrt(eb0^2+eb1^2+es0^2)
+
+  ;;print, 'sncalcpt:',x,y, sig/noise, sig, noise, eb0,eb1,es0, npix, nbck, bck
   
   if n_elements(disp) ne 0 then begin
      temp = img
